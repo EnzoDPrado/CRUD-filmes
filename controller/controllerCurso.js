@@ -31,34 +31,111 @@ const novoCurso = async function(curso){
 }
 
 //Funcao para atualizar um registro
-const atualizarCurso = async function(curso){
-    //Validaçao para o ID como campo obrigatório 
-    if(curso.id == '' || curso.id == undefined)
-        return{status:400, message: MESSAGE_ERROR.REQUIRED_FIELDS}
-    //Validacao campos obrigatórios
-    else if(curso.nome == '' || curso.nome == undefined || curso.carga_horaria == ''|| curso.carga_horaria == undefined)
-        return{status:400, message: MESSAGE_ERROR.REQUIRED_FIELDS};
-    else{
-        //import da model de curso
+const atualizarCurso = async function (curso) {
+
+    
+    //Validaçao para o ID como campo obrigatório
+    if (curso.id == ''|| curso.id == undefined)
+        return {status: 400, message: MESSAGE_ERROR.REQUIRED_ID};
+    //Validacao de campos obrigatórios
+    else if (curso.nome == '' || curso.nome == undefined || curso.carga_horaria == ''|| curso.carga_horaria == undefined)
+        return {status: 400, message: MESSAGE_ERROR.REQUIRED_FIELDS};
+    else
+    {
+        //import da model de aluno
         const atualizarCurso = require('../model/DAO/curso.js');
 
-        //chama a funcao para atualizar um curso
+        //chama a funcao para atualizar um aluno
         const result = await atualizarCurso.updateCurso(curso);
-
-        if(result)
+        
+        if (result)
             return {status: 200, message: MESSAGE_SUCCESS.UPDATE_ITEM};
         else
-            return {status:500, message: MESSAGE_ERROR.INTERNAL_ERROR_DB};
+            return {status: 500, message: MESSAGE_ERROR.INTERNAL_ERROR_DB};
+    }
+
+
+}
+
+const excluirCurso = async function (id) {
+    //Validaçao para o ID como campo obrigatório
+    if (id == ''|| id == undefined)
+        return {status: 400, message: MESSAGE_ERROR.REQUIRED_ID}
+    else{
+        //Validaçao para verificar se ID existe no BD
+        const curso = await buscarCurso(id);
+
+        //Valida se foi encontrado um registro valido
+        if (curso)
+        {
+            //import da model de curso
+            const excluirCurso = require('../model/DAO/curso.js');
+            //chama a funcao para atualizar um aluno
+            const result = await excluirCurso.deleteCurso(id);
+            
+            if (result)
+                return {status: 200, message: MESSAGE_SUCCESS.DELETE_ITEM};
+            else
+                return {status: 500, message: MESSAGE_ERROR.INTERNAL_ERROR_DB};
+        }else{
+            return {status: 404, message: MESSAGE_ERROR.NOT_FOUND_DB};
+        }
     }
 }
 
-// const excluirCurso = async function(id){
-//     //Validaçao para o ID como campo obrigatório 
-//     if(curso.id == '' || curso.id == undefined)
-//         return{status:400, message: MESSAGE_ERROR.REQUIRED_FIELDS}
-//     else{
-//         //Validacao para verificar se ID existe no DB
-//         const curso = await busca
+//Funcao para retornar todos os registros
+const listarCursos = async function () {
+    let dadosCursosJSON = {};
 
-//     }
-// }    
+    const { selectAllCursos } = require ('../model/DAO/curso.js');
+
+    const dadosCursos = await selectAllCursos();
+    console.log(dadosCursos);
+    if (dadosCursos)
+    {
+        //Conversao do tipo de dados BigInt para int (?????????)
+        //dadosAlunos.forEach(element => {
+          //  element.id = Number(element.id)
+        //});
+        
+        //Criamos uma chave alunos no JSON para retornar o array de alunos
+        dadosCursosJSON.cursos = dadosCursos;
+
+        return dadosCursosJSON;
+    }
+    else
+        return false;
+}
+
+//Funcao para retornar um registro baseado no ID
+const buscarCurso = async function (id) {
+    let dadosCursoJSON = {};
+
+    //Validaçao para o ID como campo obrigatório
+    if (id == ''|| id == undefined)
+        return {status: 400, message: MESSAGE_ERROR.REQUIRED_ID}
+    else{
+
+        const { selectByIdCurso } = require ('../model/DAO/curso.js');
+
+        const dadosCurso = await selectByIdCurso(id);
+        if (dadosCurso)
+        {
+            
+            //Criamos uma chave alunos no JSON para retornar o array de cursos
+            dadosCursoJSON.curso = dadosCurso;
+
+            return dadosCursoJSON;
+        }
+        else
+            return false;
+    }
+}
+
+module.exports = {
+    listarCursos,
+    novoCurso,
+    atualizarCurso,
+    excluirCurso,
+    buscarCurso
+}

@@ -12,7 +12,7 @@ const insertAluno = async function (aluno) {
     try {
 
         //Import da classe prismaClient, que é responsável pelas interacoes com o BD
-        const { PrismaClient } = require('@prisma/client');
+        const {PrismaClient} = require('@prisma/client');
 
         //Instancia da classe PrismaClient
         const prisma = new PrismaClient();
@@ -178,10 +178,28 @@ const selectByIdAluno = async function (id) {
 
 }
 
+const selectLastId = async function() {
+    //Import da classe prismaClient, que é responsável pelas interacoes com o BD
+
+    const { PrismaClient } = require('@prisma/client');
+
+    const prisma = new PrismaClient();
+
+
+    let sql = `select cast(id as float) as id from tbl_aluno order by id desc limit 1;`;
+    const rsAluno = await prisma.$queryRawUnsafe(sql);
+
+    if(rsAluno)
+        return rsAluno[0].id;
+    else
+        return false;
+}
+
 module.exports = {
     selectAllAlunos,
     insertAluno,
     updateAluno,
     deleteAluno,
-    selectByIdAluno
+    selectByIdAluno,
+    selectLastId
 }

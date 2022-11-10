@@ -1,5 +1,5 @@
 /*********************************************************************
- * Objetivo: Arquivo resposnsável pela manipulacao de dados com o BD 
+ * Objetivo: Arquivo responsável pela manipulacao de dados com o BD 
  *      (insert, update, delete e select)
  * Autor: Enzo D. Prado
  * Data Criacao: 06/10/2022
@@ -8,21 +8,27 @@
  *********************************************************************/
 
 const insertCurso = async function(curso){
-    
-    //Import da classe prismaClient, que é responsável pelas interações com o DB
-    const {PrismaClient, prisma} = require('@prisma/client');
 
-    //Instancia da classe PrismaClient
-    const prisma = new PrismaClient();
+    try{    
+
+        
+     //Import da classe prismaClient, que é responsável pelas interacoes com o BD
+     const { PrismaClient } = require('@prisma/client');
+
+     //Instancia da classe PrismaClient
+     const prisma = new PrismaClient();
+
+    
 
     let sql = `insert into tbl_curso(nome,
+                                    sigla,
                                     carga_horaria,
-                                    icone,
-                                    sigla)
+                                    icone)
                                     values(
                                         '${curso.nome}',
+                                        '${curso.sigla}',
                                         '${curso.carga_horaria}',
-                                        '${curso.sigla}'
+                                        '${curso.icone}'
                                 )`;
 
                                     
@@ -34,34 +40,53 @@ const insertCurso = async function(curso){
 else
     return false
 
+    }catch(error){
+        return false
+    }
 }
 
-const updateCurso = async function(curso){
-    //Import da classe prismaClient, que é responsável pelas interações com o DB
-    const {PrismaClient} = require('@prisma/client');
+//Funcao para atualizar um registro no BD
+const updateCurso = async function (curso) {
+    try {
 
-    //Instancia da classe PrismaClient
-    const prisma = new PrismaClient();
+        //Import da classe prismaClient, que é responsável pelas interacoes com o BD
+        const { PrismaClient } = require('@prisma/client');
 
-    let sql = `update tbl_curso set nome            = '${curso.nome}',
+        //Instancia da classe PrismaClient
+        const prisma = new PrismaClient();
+
+        let sql = `update tbl_curso set nome        = '${curso.nome}',
+                                    sigla           = '${curso.sigla}',
                                     carga_horaria   = '${curso.carga_horaria}',
-                                    icone           = '${curso.sigla}'
+                                    icone           =  '${curso.icone}'
+
+                                    
                             where id = '${curso.id}'
                         `;
+       
+        
+        // Executa o script SQL no Banco de dados 
+        //($executeRawUnsafe permite encaminhar uma variavel contendo o script)
+        const result = await prisma.$executeRawUnsafe (sql);
+        console.log(result)
+        //Verifica se o script foi executado com sucesso no BD
+        if (result)
+            return true;
+        else
+            return false;
 
-    //Executa o script sql no banco de dados
-    const result = await prisma.$executeRawUnsafe(sql);
-
-    //Verificar se o result foi executado no DB
-    if(result)
-        return true
-    else
-        return false
+    } catch (error) {
+        return false;
+    }
 
 }
 
+
+
 const deleteCurso = async function(id){
-    //Import da calsse prismaClient
+
+    try{
+         //Import da calsse prismaClient
     const{PrismaClient} = require('@prisma/client');
 
     //Instancia da classe PrismaClient
@@ -80,10 +105,16 @@ const deleteCurso = async function(id){
     else
         return false
 
+    }catch(error){
+        return false
+    }
+   
+
 }
 
 const selectAllCursos = async function(){
-    //Import da classe PrismaClient
+
+     //Import da classe PrismaClient
     const {PrismaClient} = require ('@prisma/client');
 
     //Instancia do PrismaClient
@@ -91,16 +122,23 @@ const selectAllCursos = async function(){
 
     //Criar um objeto do tipo RecordSet(rsCursos) para receber os dados do DB
     //Através do script SQL(select)
-    const rsCursos = await prisma.$queryRaw `select cast(id as float) as id, nome, carga_horaria, icone from tbl_curso order by id desc`;
-
-    if(rsCursos.lenght > 0)
+    const rsCursos = await prisma.$queryRaw `select cast(id as float) as id, nome, sigla, carga_horaria, icone from tbl_curso order by id desc`;
+    
+    if(rsCursos.length > 0) {
         return rsCursos;
-    else   
+    }
+    else   {
+        console.log(`asdasdasdasd`);
         return false
+    }
+        
+
+    
+    
 }
 
 const selectByIdCurso = async function(id){
-    //Import da classe prismaClient
+        //Import da classe prismaClient
     const {PrismaClient} = require('@prisma/client');
 
     //Instancia do PrismaClient
@@ -108,17 +146,22 @@ const selectByIdCurso = async function(id){
 
     let sql = `select cast(id as float) as id,
                                         nome,
+                                        sigla,
                                         carga_horaria,
-                                        sigla
+                                        icone
                                         from tbl_curso
                                         where id = ${id}`
                                     
     const rsCurso = await prisma.$queryRawUnsafe(sql);
+    
 
-    if(rsCurso > 0)
+    if(rsCurso.length > 0)
         return rsCurso;
     else
         return false;
+
+   
+    
 }
 
 

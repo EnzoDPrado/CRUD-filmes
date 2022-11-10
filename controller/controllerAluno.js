@@ -23,12 +23,50 @@ const novoAluno = async function (aluno) {
     {
         //import da model de aluno
         const novoAluno = require('../model/DAO/aluno.js');
+        //import da model aluno curso
+        const novoAlunoCurso = require('../model/DAO/aluno_curso.js');
 
         //chama a funcao para inserir um novo aluno
-        const result = await novoAluno.insertAluno(aluno);
+        const resultNovoAluno = await novoAluno.insertAluno(aluno);
         
-        if (result)
-            return {status: 201, message: MESSAGE_SUCCESS.INSERT_ITEM};
+        //Verifica se os dados do novo aluno foi inserido no BD
+        if(resultNovoAluno){
+            //Chama a funcao que verifica qual o ID gerado para o novo Aluno
+            let idNovoAluno = await novoAluno.selectLastId();
+
+            if(idNovoAluno > 0)
+            {
+                let alunoCurso = {};
+                //Retorna o ano corrente
+                let ano_matricula = new Date().getFullYear();
+                //Cria a matricula do aluno(id_aluno + id_curso + ano corrente)
+                let numero_matricula = `${idNovoAluno}${aluno.curso[0].id_curso}${ano_matricula}`
+                //Cria o objeto JSON com todos as chaves e valores
+                alunoCurso.idAluno = idNovoAluno;
+                alunoCurso.idCurso = aluno.curso[0].id_curso;
+                alunoCurso.matricula = numero_matricula;
+                alunoCurso.status_aluno = 'Cursando';
+
+                //Chama a funcao para inserir na tabela alunoCurso
+                const resultNovoAlunoCurso = await novoAlunoCurso.insertAlunoCurso(alunoCurso);
+
+                if(resultNovoAlunoCurso)
+                    return {status: 201, message: MESSAGE_SUCCESS.INSERT_ITEM};
+                else{
+                    //Caso aconteça um erro neste processo, obrigatoriamente
+                    //Deverá ser excluido no BD o registro do aluno
+                    await excluirAluno(idNovoAluno);
+                    return {status: 500, message: MESSAGE_ERROR.INTERNAL_ERROR_DB};
+                }
+            }else{
+                    //Caso aconteça um erro neste processo, obrigatoriamente
+                    //Deverá ser excluido no BD o registro do aluno
+                    await excluirAluno(idNovoAluno);
+                    return {status: 500, message: MESSAGE_ERROR.INTERNAL_ERROR_DB};
+            }
+        }
+
+        
         else
             return {status: 500, message: MESSAGE_ERROR.INTERNAL_ERROR_DB};
     }
@@ -94,20 +132,35 @@ const excluirAluno = async function (id) {
 //Funcao para retornar todos os registros
 const listarAlunos = async function () {
     let dadosAlunosJSON = {};
+    
 
+    //Import da model de aluno e aluno curso
     const { selectAllAlunos } = require ('../model/DAO/aluno.js');
+    const { selectAlunoCurso } = require ('../model/DAO/aluno_curso.js');
 
+    //Busca todos os alunos
     const dadosAlunos = await selectAllAlunos();
 
     if (dadosAlunos)
     {
-        //Conversao do tipo de dados BigInt para int (?????????)
-        //dadosAlunos.forEach(element => {
-          //  element.id = Number(element.id)
-        //});
-        
-        //Criamos uma chave alunos no JSON para retornar o array de alunos
-        dadosAlunosJSON.alunos = dadosAlunos;
+        const alunosCursoArray = dadosAlunos.map(async itemAluno => {
+            const dadosAlunoCurso = await selectAlunoCurso(itemAluno.id);
+
+            if(dadosAlunoCurso){
+            //Acrescenta uma chave curso e coloca os dados dos curso do aluno
+            itemAluno.curso = dadosAlunoCurso;
+            }else{
+                itemAluno.curso = 'Nenhum curso matriculado';
+            }
+
+            
+            //Adiciona no array cada elemento contendo dados dos aluno e o seu curso
+            // alunosCursoArray.push(itemAluno);
+
+            return itemAluno
+        });
+
+        dadosAlunosJSON.alunos = await Promise.all(alunosCursoArray);
 
         return dadosAlunosJSON;
     }
@@ -124,24 +177,38 @@ const buscarAluno = async function (id) {
         return {status: 400, message: MESSAGE_ERROR.REQUIRED_ID}
     else{
 
+        //Import das models aluno e alunoCurso
         const { selectByIdAluno } = require ('../model/DAO/aluno.js');
+        const {selectAlunoCurso} = require('../model/DAO/aluno_curso');
 
         const dadosAluno = await selectByIdAluno(id);
 
         if (dadosAluno)
         {
-            //Conversao do tipo de dados BigInt para int (?????????)
-            //dadosAlunos.forEach(element => {
-            //  element.id = Number(element.id)
-            //});
-            
-            //Criamos uma chave alunos no JSON para retornar o array de alunos
-            dadosAlunosJSON.aluno = dadosAluno;
+            //Busca o dados referente ao curso do aluno 
+            const dadosAlunoCurso = await selectAlunoCurso(id);
 
-            return dadosAlunosJSON;
+            
+
+            if(dadosAlunoCurso){
+                
+                //Adiciona a chave curso dentro do objeto dos dados do aluno e 
+                //acrescenta os dados do curso do aluno
+                dadosAluno[0].curso = dadosAlunoCurso;
+
+                //Criamos uma chave alunos no JSON para retornar o array de alunos
+                dadosAlunosJSON.aluno = dadosAluno;
+
+                return dadosAlunosJSON;
+                
+            }else{
+                return dadosAlunosJSON
+            }
+
+           
         }
         else
-            return false;
+            return false;            
     }
 }
 
@@ -150,5 +217,6 @@ module.exports = {
     novoAluno,
     atualizarAluno,
     excluirAluno,
-    buscarAluno
+    buscarAluno,
+    
 }

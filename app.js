@@ -124,7 +124,7 @@ app.post('/v1/aluno', cors(), jsonParser, async function(request, response){
         if (JSON.stringify(dadosBody) != '{}')
         {
             //imnport do arquivo da controller de aluno
-            const controllerAluno = require('./controller/controllerAluno.js');
+            const controllerAluno = require('./controller/controllerAluno');
             //Chama a funcao novoAluno da controller e encaminha os dados do body 
             const novoAluno = await controllerAluno.novoAluno(dadosBody);
 
@@ -218,6 +218,198 @@ app.delete('/v1/aluno/:id', cors(), jsonParser, async function(request, response
 
         statusCode = aluno.status;
         message = aluno.message;
+
+    }else{
+        statusCode = 400;
+        message = MESSAGE_ERROR.REQUIRED_ID;
+    }
+
+    response.status(statusCode);
+    response.json(message);
+
+});
+
+
+//EndPoint para Listar todos os Cursos
+app.get('/v1/cursos', cors(), async function (request, response){
+
+    let statusCode;
+    let message;
+
+    //import do arquivo controllerAluno
+    const controllerCurso = require('./controller/controllerCurso.js');
+
+    //Retorna todos os alunos existentes no BD
+    const dadosCursos = await controllerCurso.listarCursos();
+
+    console.log(dadosCursos)
+    //Valida se existe retorno de dados
+    if(dadosCursos)
+    {   //Status 200
+        statusCode = 200;
+        message = dadosCursos;
+    }else{
+        //Status 404
+        statusCode = 404;
+        message = MESSAGE_ERROR.NOT_FOUND_DB
+    }
+
+    //Retorna os dados da API
+    response.status(statusCode);
+    response.json(message);
+
+});
+
+//EndPoint para Buscar um Curso pelo ID
+app.get('/v1/curso/:id', cors(), async function (request, response){
+
+    let statusCode;
+    let message;
+    let id = request.params.id;
+
+    //Validação do ID na requisição
+    if (id != '' && id != undefined)
+    {
+        //import do arquivo controllerAluno
+        const controllerCurso = require('./controller/controllerCurso.js');
+
+        //Retorna todos os alunos existentes no BD
+        const dadosCurso = await controllerCurso.buscarCurso(id);
+
+        //Valida se existe retorno de dados
+        if(dadosCurso)
+        {   //Status 200
+            statusCode = 200;
+            message = dadosCurso;
+        }else{
+            //Status 404
+            statusCode = 404;
+            message = MESSAGE_ERROR.NOT_FOUND_DB
+        }
+    }else{
+        statusCode = 400;
+        message = MESSAGE_ERROR.REQUIRED_ID;
+    }
+
+    //Retorna os dados da API
+    response.status(statusCode);
+    response.json(message);
+
+});
+
+//EndPoint para inserir um novo Curso
+app.post('/v1/curso', cors(), jsonParser, async function(request, response){
+    let statusCode;
+    let message;
+    let headerContentType;
+
+    //Reccebe o tipo de content-type que foi enviado no header da requisicao
+        //application/json
+    headerContentType = request.headers['content-type'];
+
+    //Validar se o content-type é do tipo application/json
+    if (headerContentType == 'application/json'){
+        //Recebe do corpo da mensagem o conteudp
+        let dadosBody = request.body;
+
+        //Realiza um processo de conversao de dados para conseguir comparar o json vazio
+        if (JSON.stringify(dadosBody) != '{}')
+        {
+            //imnport do arquivo da controller de aluno
+            const controllerCurso = require('./controller/controllerCurso.js');
+            //Chama a funcao novoAluno da controller e encaminha os dados do body 
+            const novoCurso = await controllerCurso.novoCurso(dadosBody);
+
+            statusCode = novoCurso.status;
+            message = novoCurso.message;
+            
+        }else{
+            statusCode = 400;
+            message = MESSAGE_ERROR.EMPTY_BODY;
+        }
+
+    }else{
+        statusCode = 415;
+        message = MESSAGE_ERROR.CONTENT_TYPE;
+    }
+
+    response.status(statusCode);
+    response.json(message);
+
+
+});
+
+//EndPoint para atualizar um Curso existente
+app.put('/v1/curso/:id', cors(), jsonParser, async function(request, response){
+    let statusCode;
+    let message;
+    let headerContentType;
+
+    //Reccebe o tipo de content-type que foi enviado no header da requisicao
+        //application/json
+    headerContentType = request.headers['content-type'];
+
+    //Validar se o content-type é do tipo application/json
+    if (headerContentType == 'application/json'){
+        //Recebe do corpo da mensagem o conteudp
+        let dadosBody = request.body;
+
+        //Realiza um processo de conversao de dados para conseguir comparar o json vazio
+        if (JSON.stringify(dadosBody) != '{}')
+        {
+            //Recebe o id enviado por parametro na requisição
+            let id = request.params.id;
+            
+            //Validação do ID na requisição
+            if (id != '' && id != undefined)
+            {
+                //Adiciona o id no JSON que chegou do corpo da requisição
+                dadosBody.id = id;
+                //imnport do arquivo da controller de aluno
+                const controllerCurso = require('./controller/controllerCurso.js');
+                //Chama a funcao novoAluno da controller e encaminha os dados do body 
+                const novoCurso = await controllerCurso.atualizarCurso(dadosBody);
+
+                statusCode = novoCurso.status;
+                message = novoCurso.message;
+            }else{
+                statusCode = 400;
+                message = MESSAGE_ERROR.REQUIRED_ID;
+            }
+
+            
+        }else{
+            statusCode = 400;
+            message = MESSAGE_ERROR.EMPTY_BODY;
+        }
+
+    }else{
+        statusCode = 415;
+        message = MESSAGE_ERROR.CONTENT_TYPE;
+    }
+
+    response.status(statusCode);
+    response.json(message);
+
+
+});
+
+//EndPoint para excluir um Aluno existente
+app.delete('/v1/curso/:id', cors(), jsonParser, async function(request, response){
+    let statusCode;
+    let message;
+    let id = request.params.id;
+    
+    //Validação do ID na requisição
+    if (id !== '' && id !== undefined){
+         //import do arquivo da controller de aluno
+        const controllerCurso = require('./controller/controllerCurso.js');
+        
+        //Chama a funcao para excluir um item 
+        const curso = await controllerCurso.excluirCurso(id);
+
+        statusCode = curso.status;
+        message = curso.message;
 
     }else{
         statusCode = 400;
